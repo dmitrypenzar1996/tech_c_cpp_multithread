@@ -1,0 +1,3 @@
+/Users/penzardmitry/Desktop/C/technosphere_c_multithread/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/penzardmitry/Desktop/C/technosphere_c_multithread/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/penzardmitry/Desktop/C/technosphere_c_multithread/cmake-build-debug/CMakeFiles/technosphere_c_multithread.dir
