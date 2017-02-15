@@ -21,7 +21,7 @@ class MemListElem;
 
 class Allocator {
 public:
-    Allocator(void* base, size_t size, double sys_frac = 0.01);
+    Allocator(void* base, size_t size);
     Pointer alloc(size_t N);
     void realloc(Pointer& p, size_t N);
     void free(Pointer& p);
@@ -30,18 +30,16 @@ public:
 private:
     char* mem_start;
     char* mem_end;
-    double sys_frac;
+    MemListElem* last_before_sys;
     MemListElem* avail_head;
     MemListElem* avail_tail;
     MemListElem* free_head; // for unused MemListElems
 
     MemListElem* getFreeElem();
     MemListElem* getAvailElem(size_t chunk_size);
-    void addNewFreeElemsChunk(MemListElem* start, MemListElem* end);
     void safeMemcpy(void* dst, void* src, size_t n);
     void addToAvailList(MemListElem* elem);
     void addToFreeList(MemListElem* elem);
-    char moveSysWall();
     void joinWithFreeChildren(MemListElem* elem);
     char _realloc(Pointer& p, size_t);
     size_t align(size_t size);

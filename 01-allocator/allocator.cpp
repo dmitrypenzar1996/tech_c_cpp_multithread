@@ -1,6 +1,5 @@
 #include "allocator.h"
 
-
 const int64_t MemListElem::FIRST_LEFT_BIT_MASK = 0x8000000000000000L;
 const int64_t MemListElem::ADDRESS_MASK = 0x7FFFFFFFFFFFFFFFL;
 
@@ -86,95 +85,33 @@ void Allocator::addToFreeList(MemListElem* elem)
 }
 
 
-char Allocator::moveSysWall()
-{
-    // nearest to syswall elem
-    MemListElem* nearest_elem = avail_head->getNext();
-    if (nearest_elem == avail_tail)
-    {
-        return 0;
-    }
-
-    MemListElem* next_elem = nearest_elem->getNext();
-    while(  (next_elem < avail_tail))
-    {
-        nearest_elem = next_elem;
-        next_elem = nearest_elem->getNext();
-    }
-
-    size_t available_size = (((size_t) (nearest_elem->getSize() *\
-        sys_frac)) / sizeof(MemListElem) + 2) * sizeof(MemListElem);
-
-
-    if (available_size + sizeof(void*) <= nearest_elem->getSize())
-    {
-        char* sys_wall_pos = avail_tail->getAllocStart();
-        char* new_sys_wall_pos = avail_tail->getAllocStart() - available_size;
-        addNewFreeElemsChunk((MemListElem*)(new_sys_wall_pos), (MemListElem*)sys_wall_pos);
-
-        avail_tail->setAllocStart(new_sys_wall_pos);
-        avail_tail->setChild(nullptr);
-
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-
-
-}
-
-
-
 MemListElem* Allocator::getFreeElem()
 {
-    MemListElem* elem;
-    if (free_head)
+    MemListElem* child;
+    while ((child = last_before_sys->getChild()) != avail_tail)
     {
-        elem = free_head;
-        free_head = free_head->getChild();
-        return elem;
+        last_before_sys = child;
     }
 
-    if (moveSysWall())
+    size_t available_size = last_before_sys->getSize();
+
+    if (available_size - sizeof(void*) >= sizeof(MemListElem))
     {
-        elem = free_head;
-        free_head = free_head->getChild();
-        return elem;
+        avail_tail->setAllocStart(avail_tail->getAllocStart() - sizeof(MemListElem));
+        return new(avail_tail->getAllocStart()) MemListElem();
     }
-    else
-    {
-        throw AllocError(AllocErrorType::NoMemory);
-    }
+
+    throw AllocError(AllocErrorType::NoMemory);
 }
 
 
-void Allocator::addNewFreeElemsChunk(MemListElem* start, MemListElem* end)
-{
-
-    for (MemListElem* elem = start; elem < end ; ++elem)
-    {
-        addToFreeList(new (elem) MemListElem());
-    }
-}
-
-Allocator::Allocator(void* base, size_t size, double _sys_frac)
+Allocator::Allocator(void* base, size_t size)
 {
     size = size - (size % sizeof(int64_t));
 
     mem_start = (char*) align((size_t)base);
     mem_end   = mem_start + size;
     free_head = nullptr;
-    sys_frac = _sys_frac;
-
-    size_t sys_size = ((size_t) (size * sys_frac) / sizeof(MemListElem) + 3) *
-                      sizeof(MemListElem);
-
-    if (sys_size > size - sizeof(MemListElem*)) // sizeof(MemListElem) for head next
-    {
-        throw AllocError(AllocErrorType::NoMemory);
-    }
 
     avail_head = new(mem_end - sizeof(MemListElem)) MemListElem();
     avail_tail = new(mem_end - sizeof(MemListElem) * 2) MemListElem();
@@ -185,20 +122,20 @@ Allocator::Allocator(void* base, size_t size, double _sys_frac)
     avail_head->setChild(avail_tail);
 
 
-    avail_tail->setAllocStart(mem_end - sys_size);
+    avail_tail->setAllocStart(mem_end - sizeof(MemListElem) * 3);
     avail_tail->setFreeFlag();
 
-    addNewFreeElemsChunk((MemListElem*)avail_tail->getAllocStart(),
-        avail_tail);
 
+    MemListElem* elem = new(avail_tail->getAllocStart()) MemListElem();
 
-    MemListElem* elem = getFreeElem();
     elem->setAllocStart(mem_start + sizeof(MemListElem*)); // for head next
+
     elem->setChild(avail_tail);
-
-
     avail_head->setChild(elem);
+
     addToAvailList(elem);
+
+    last_before_sys = elem;
 
 }
 
@@ -344,24 +281,37 @@ void Allocator::defrag()
     }
 
 
-    for(MemListElem* elem = prev_used_elem; elem < avail_tail; ++elem)
+
+
+
+    MemListElem* used_sys_border = (MemListElem*)avail_tail->getAllocStart();
+    while((used_sys_border > (MemListElem*)avail_tail->getAllocStart()) &&\
+                used_sys_border->getFreeFlag())
+    {
+        ++used_sys_border;
+    }
+
+    avail_tail->setAllocStart((char*)used_sys_border - sizeof(MemListElem));
+
+    for(MemListElem* elem = used_sys_border; elem < avail_tail; ++elem)
     {
         if (elem->getFreeFlag())
         {
             addToFreeList(elem);
         }
+
     }
 
-    avail_tail->setAllocStart((char*)prev_used_elem - sizeof(MemListElem*)); // remove unused tail,
-    // it is safe
     avail_tail->setChild(nullptr);
 
-    MemListElem* elem = getFreeElem();
+    MemListElem* elem = new(avail_tail->getAllocStart()) MemListElem();
 
     elem->setAllocStart(cur_mem_pos);
     elem->setChild(avail_tail);
     prev_used_elem->setChild(elem);
 
     addToAvailList(elem);
+
+    last_before_sys = elem;
 }
 
