@@ -56,8 +56,11 @@ public:
      * @return new allocator
      */
     Allocator(void* base, size_t size);
-
-
+    Allocator(const Allocator&) = delete;
+    Allocator(Allocator&&) = default;
+    Allocator& operator=(const Allocator&) = delete;
+    Allocator& operator=(Allocator&&) = default;
+    ~Allocator() = default;
     /*
      * try to allocate memory of given size
      * if its possible returns pointer

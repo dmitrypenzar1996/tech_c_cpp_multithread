@@ -287,7 +287,6 @@ void Allocator::defrag()
 
 
 
-
     MemListElem* used_sys_border = (MemListElem*)avail_tail->getAllocStart();
     while((used_sys_border > (MemListElem*)avail_tail->getAllocStart()) &&\
                 used_sys_border->getFreeFlag())
@@ -295,6 +294,7 @@ void Allocator::defrag()
         ++used_sys_border;
     }
 
+    // we can safely remove all unused elements before the first used element
     avail_tail->setAllocStart((char*)used_sys_border - sizeof(MemListElem));
 
     for(MemListElem* elem = used_sys_border; elem < avail_tail; ++elem)
