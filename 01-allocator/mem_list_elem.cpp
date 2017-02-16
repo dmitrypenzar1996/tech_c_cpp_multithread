@@ -21,13 +21,14 @@ char* MemListElem::getAllocStart()
     return (char*) ((int64_t) alloc_start & ADDRESS_MASK) ;
 }
 
+
 size_t MemListElem::getSize()
 {
     if (child)
     {
         return child->getAllocStart() - getAllocStart() ;
     }
-    else
+    else // can't calculate size of block without child
     {
         throw Error("bad child");
     }
@@ -51,6 +52,7 @@ char MemListElem::getFreeFlag()
     return char ((((size_t)alloc_start) & ( FIRST_LEFT_BIT_MASK)) >> 63) ;
 }
 
+
 void MemListElem::split2(MemListElem* _child, size_t chunk_size)
 {
     _child->child = child;
@@ -65,11 +67,12 @@ MemListElem* MemListElem::getNext()
     {
         return *(MemListElem**) getAllocStart();
     }
-    else
+    else // there is no memory for next if block is not free
     {
         throw Error("Element is not in free list ");
     }
 }
+
 
 void MemListElem::setNext(MemListElem* _next)
 {
@@ -77,16 +80,18 @@ void MemListElem::setNext(MemListElem* _next)
     {
         *(MemListElem**)getAllocStart() = _next;
     }
-    else
+    else // there is no memory for next if block is not free
     {
         throw Error("Element is not free or has zero size");
     }
 }
 
+
 MemListElem* MemListElem::getChild()
 {
     return child;
 }
+
 
 void MemListElem::setChild(MemListElem* _child)
 {

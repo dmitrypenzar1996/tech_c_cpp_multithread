@@ -14,8 +14,39 @@ class MemListElem;
  * Wraps given memory area and provides defragmentation allocator interface on
  * the top of it.
  *
+ * To allow defragmentation Allocator store links to allocated blocks of memory
+ * and return links to this links. This links is stored in sys part of memory.
+ * We add them from end part of given memory.
+ * pointers to allocated but now free blocks are stored in avail_list,
+ * avail_head - is head of this list, it always has size 8 bytes to store pointer
+ * to next element
+ * avail_tail - is tail of this list, it's alloc_start refers to start of 
+ * sys part
+ * last_before_sys - is element before avail_tail
+ * pointers which are not using now are stored in free_list
+ * free_head - head of this list
+ * 
+ *So, it's looks like something like this
+ *                Our allocator memory:
+ *Data|10   |xxxxx|7    |xxxxx|xxxxx|12   |6 12|5  7|4  8|3  9|2 10|7   0|1  11|
+ *    |next |some |free |some |some |free |elem|elem|elem|elem|elem|avail|avail|
+ *    |     |stuff|block|stuff|stuff|block|    |    |    |    |    |tail | head|
+ *    1     2     3     4     5     6     7    8    9    10   11   12   13     14
+ *Var mem                           last                                       mem
+ *    start                         before                                     end
+ *                                  sys
  *
+ * where
+ *
+ * |x  y|
+ * |elem|  x = alloc_start
+ *         y = child
+ * 
+ * |z    | z = next
+ * |free |
+ * |block|
  */
+
 class Allocator {
 public:
     /*
