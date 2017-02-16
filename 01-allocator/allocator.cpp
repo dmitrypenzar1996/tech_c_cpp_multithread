@@ -1,5 +1,4 @@
 #include "allocator.h"
-#include <iostream>
 const int64_t MemListElem::FIRST_LEFT_BIT_MASK = 0x8000000000000000L;
 const int64_t MemListElem::ADDRESS_MASK = 0x7FFFFFFFFFFFFFFFL;
 
