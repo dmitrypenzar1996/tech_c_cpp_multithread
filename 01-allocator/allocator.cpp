@@ -162,6 +162,11 @@ void Allocator::joinWithFreeChildren(MemListElem* elem)
         //valid because all valid elements in avail list have nonnull child
     }
     elem->setChild(child);
+
+    if (child == avail_tail)
+    {
+        last_before_sys = child;
+    }
 }
 
 char Allocator::_realloc(Pointer& ptr, size_t chunk_size)
