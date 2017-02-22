@@ -1,4 +1,5 @@
 #include "allocator.h"
+#include <iostream>
 const int64_t MemListElem::FIRST_LEFT_BIT_MASK = 0x8000000000000000L;
 const int64_t MemListElem::ADDRESS_MASK = 0x7FFFFFFFFFFFFFFFL;
 
@@ -34,6 +35,7 @@ MemListElem* Allocator::getAvailElem(size_t chunk_size)
 
     MemListElem* prev_elem = avail_head;
     MemListElem* cur_elem = avail_head->getNext();
+    MemListElem* child_elem;
     size_t elem_size = 0;
 
     while(cur_elem < avail_tail)
@@ -67,9 +69,24 @@ MemListElem* Allocator::getAvailElem(size_t chunk_size)
             return cur_elem;
         }
         else
-        {
-            prev_elem = cur_elem;
-            cur_elem = cur_elem->getNext();
+        {// if two free blocks are next to each other
+            if ((child_elem = cur_elem->getChild()) != avail_tail &&\
+                    child_elem->getFreeFlag())
+            {
+                cur_elem->setChild(child_elem->getChild()); // merge blocks
+
+                child_elem->setChild(nullptr);
+
+                if (child_elem == last_before_sys)
+                {
+                    last_before_sys = cur_elem;
+                }
+            }
+            else
+            {
+                prev_elem = cur_elem;
+                cur_elem = cur_elem->getNext();
+            }
         }
     }
     throw AllocError(AllocErrorType::NoMemory);
@@ -133,7 +150,6 @@ Allocator::Allocator(void* base, size_t size)
     avail_head->setChild(elem);
 
     addToAvailList(elem);
-
     last_before_sys = elem;
 
 }

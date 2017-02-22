@@ -321,7 +321,9 @@ TEST(Allocator, ReallocGrow) {
     a.free(p2);
 }
 
-TEST(Allocator, ReallocSafetyForFreeList) {
+TEST(Allocator, ReallocSafetyForFreeList) // test if realloc is safe
+    // for free list of allocator (or other structures which stores free blocks)
+{ 
     Allocator a(buf, sizeof(buf));
     Pointer p1 = a.alloc(128);
     Pointer p2 = a.alloc(128);
@@ -335,4 +337,61 @@ TEST(Allocator, ReallocSafetyForFreeList) {
 	
     EXPECT_EQ(ptr1, p1.get());
     EXPECT_NE(ptr2, p4.get());
+    a.free(p1);
+    a.free(p3);
+    a.free(p4);
+}
+
+TEST(Allocator, AllocMergeFreeBlocks) // test if allocator can merge to
+    // next to each other free blocks
+{
+    Allocator a(buf, sizeof(buf));
+    vector<Pointer> ptrs;
+    int size = 135;
+    ASSERT_TRUE(fillUp(a, size, ptrs));
+
+    a.free(ptrs[1]);
+    a.free(ptrs[10]);
+    a.free(ptrs[11]);
+    Pointer pnew = a.alloc(size * 2);
+    for (Pointer& p : ptrs) {
+        if (p.get() != nullptr)
+        {
+            EXPECT_TRUE(isDataOk(p, size));
+            a.free(p);
+        }
+    }
+}
+
+TEST(Allocator, ReallocMarkFreeSpace) // test if reallocing of smaller part of memory
+    // than was alloced for this block frees other part
+{
+    Allocator a(buf, sizeof(buf));
+    vector<Pointer> ptrs;
+    int size = 135;
+    ASSERT_TRUE(fillUp(a, size, ptrs));
+
+
+    a.free(ptrs[10]);
+    a.free(ptrs[11]);
+    a.free(ptrs[12]);
+    a.realloc(ptrs[9], size * 4);
+    a.realloc(ptrs[9], size * 3);
+    Pointer pnew = a.alloc(size);
+
+    a.free(ptrs[9]);
+    Pointer pnew2 = a.alloc(size * 2);
+    a.realloc(pnew2, size);
+    Pointer pnew3 = a.alloc(size);
+    a.free(pnew);
+    a.free(pnew2);
+    a.free(pnew3);
+
+    for (Pointer& p : ptrs) {
+        if (p.get() != nullptr)
+        {
+            EXPECT_TRUE(isDataOk(p, size));
+            a.free(p);
+        }
+    }
 }
