@@ -325,21 +325,35 @@ TEST(Allocator, ReallocSafetyForFreeList) // test if realloc is safe
     // for free list of allocator (or other structures which stores free blocks)
 { 
     Allocator a(buf, sizeof(buf));
-    Pointer p1 = a.alloc(128);
-    Pointer p2 = a.alloc(128);
-    Pointer p3 = a.alloc(256);
+    vector<Pointer> ptrs;
+    int size = 135;
+    ASSERT_TRUE(fillUp(a, size, ptrs));
 
-    void* ptr2 = p2.get();
-    a.free(p2);
-    void* ptr1 = p1.get();
-    a.realloc(p1, 256);
-    Pointer p4 = a.alloc(128);
-	
-    EXPECT_EQ(ptr1, p1.get());
-    EXPECT_NE(ptr2, p4.get());
-    a.free(p1);
-    a.free(p3);
-    a.free(p4);
+    std::sort(ptrs.begin(), ptrs.end(), [](Pointer const& a, Pointer const& b){
+            return a.get() < b.get();  });// sort pointers by memory 
+
+
+    void* ptr2 = ptrs[2].get();
+    a.free(ptrs[2]);
+    a.realloc(ptrs[1], size * 2);
+    bool is_full = false;
+    try
+    {
+        Pointer p = a.alloc(size);
+        a.free(p);
+    } 
+    catch (AllocError&) 
+    {
+        is_full = true;
+    }
+    EXPECT_TRUE(is_full);
+    for (Pointer& p : ptrs) {
+        if (p.get() != nullptr)
+        {
+            EXPECT_TRUE(isDataOk(p, size));
+            a.free(p);
+        }
+    }
 }
 
 TEST(Allocator, AllocMergeFreeBlocks) // test if allocator can merge to
@@ -349,6 +363,9 @@ TEST(Allocator, AllocMergeFreeBlocks) // test if allocator can merge to
     vector<Pointer> ptrs;
     int size = 135;
     ASSERT_TRUE(fillUp(a, size, ptrs));
+
+    std::sort(ptrs.begin(), ptrs.end(), [](Pointer const& a, Pointer const& b){
+            return a.get() < b.get();  });// sort pointers by memory 
 
     a.free(ptrs[1]);
     a.free(ptrs[10]);
@@ -363,7 +380,7 @@ TEST(Allocator, AllocMergeFreeBlocks) // test if allocator can merge to
     }
 }
 
-TEST(Allocator, ReallocMarkFreeSpace) // test if reallocing of smaller part of memory
+TEST(Allocator, ReallocMarkFreeSpace) // test if the reallocing of smaller part of memory
     // than was alloced for this block frees other part
 {
     Allocator a(buf, sizeof(buf));
@@ -372,6 +389,8 @@ TEST(Allocator, ReallocMarkFreeSpace) // test if reallocing of smaller part of m
     ASSERT_TRUE(fillUp(a, size, ptrs));
 
 
+    std::sort(ptrs.begin(), ptrs.end(), [](Pointer const& a, Pointer const& b){
+            return a.get() < b.get();  });// sort pointers by memory 
     a.free(ptrs[10]);
     a.free(ptrs[11]);
     a.free(ptrs[12]);
