@@ -129,6 +129,7 @@ public:
 
       fout << "}" << std::endl;
 
+      //Index layers
       IndexNode<Key, Value>* indexNode; 
       IndexNode<Key, Value>* nextIndexNode;
       names[pTailIdx] = "pTailIdx";
@@ -185,6 +186,7 @@ public:
       fout << "}" << std::endl;
       fout.close();
   }
+
   /**
    * Destructor
    */
@@ -341,7 +343,7 @@ public:
 
   /**
    * Return iterator onto very first key in the skiplist
-       */
+  */
   virtual Iterator<Key, Value> cbegin() const {
     return Iterator<Key,Value>(static_cast<Node<Key, Value>*>(&pHead->next()));
   };
@@ -364,6 +366,9 @@ public:
     return Iterator<Key,Value>(pTail);
   };
 private:
+  /*
+   * Returns random level < MAXHEIGHT for this node in SkipList (for insertion)
+   */
     int randLevel() const 
     {
         // xorshift+ 
@@ -387,6 +392,9 @@ private:
         return r < MAXHEIGHT ? r : MAXHEIGHT;
     }
 
+    /*
+     * Insert node to Skip List
+     */
     virtual void InsertToList(DataNode<Key, Value>* dataNode,\
                 DataNode<Key, Value>* prevDataNode,\
                 IndexNode<Key, Value>* update_list[MAXHEIGHT]) const
@@ -405,6 +413,9 @@ private:
         }
     }
 
+    /*
+     * Insert node to data layer
+     */
     virtual void InsertToDataLayer(DataNode<Key, Value>* node,\
             DataNode<Key, Value>* prevLayerNode) const
     {
@@ -412,6 +423,9 @@ private:
         prevLayerNode->next(node);
     }
 
+    /*
+     * Insert node to index layer prev index node points to
+     */
     virtual void InsertToIndexLayer(IndexNode<Key, Value>* node,\
             IndexNode<Key, Value>* prevLayerNode) const 
     {
@@ -419,11 +433,19 @@ private:
         prevLayerNode->next(node);
     }
 
+    /*
+     * Returns if key1 is equal to key2
+     */
     virtual bool keysEqual(const Key& key1,  const Key& key2) const
     {
         return !(keyLess(key1, key2) || keyLess(key2, key1));
     }
 
+    /*
+     * Returns DataNode in Data layer with the greatest key less than provided
+     * Also put IndexNodes with the greatest key less than provided from each IndexLayer
+     * in updateList
+     */
     virtual DataNode<Key, Value>* getBeforeEqual(const Key& key,
             IndexNode<Key, Value>* update_list[MAXHEIGHT]) const
     {
@@ -459,6 +481,7 @@ private:
     }
 };
 
+//Init comparator
 template<class Key, class Value, size_t MAXHEIGHT, class Compare>
 const Compare& SkipList<Key, Value, MAXHEIGHT, Compare>::keyLess = Compare();
 

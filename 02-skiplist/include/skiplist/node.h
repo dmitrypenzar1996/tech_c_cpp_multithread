@@ -100,19 +100,25 @@ public:
 
   virtual ~IndexNode() {}
 
-  /**
-   * Return key assosiated with the given node
+  /*
+   * Return corresponding node on the lower layer 
    */
   virtual Node<Key, Value>& down() const 
   {
       return *pDown;
   }
 
+  /*
+   * Return root of the given node
+   */
   virtual Node<Key, Value>& root() const
   {
       return *pRoot;
   } 
 
+  /**
+   * Return key assosiated with the given node
+   */
   virtual const Key& key() const {
     assert(pRoot != nullptr);
     return pRoot->key();
