@@ -75,7 +75,7 @@ public:
       int nodeNum = 0;
       if (dataNode != pTail)
       {
-          names[dataNode] = "dataNode" + std::to_string(++nodeNum);
+          names[dataNode] = "dataNode_" + std::to_string(++nodeNum);
       }
       else
       {
@@ -99,7 +99,7 @@ public:
           nextNode = static_cast<DataNode<Key, Value>*>(&dataNode->next());
           if (nextNode != pTail)
           {
-              names[nextNode] = "dataNode" + std::to_string(++nodeNum);
+              names[nextNode] = "dataNode_" + std::to_string(++nodeNum);
           }
           else
           {
@@ -149,7 +149,7 @@ public:
                             Value>*>(&indexNode->next());
               if (nextIndexNode != pTailIdx)
               {
-                  names[nextIndexNode] = "aHeadIdx" + std::to_string(level) + 
+                  names[nextIndexNode] = "IndexNode_" + std::to_string(level) + 
                       "_" + std::to_string(++nodeNum);
               }
 
@@ -239,6 +239,7 @@ public:
 
         DataNode<Key, Value>* dataNode = new DataNode<Key, Value>(&key, &value);
         InsertToList(dataNode, curDataNode, update_list);
+
 
         return nullptr;
   };
@@ -402,7 +403,6 @@ private:
             InsertToIndexLayer(index_node, update_list[i]);
             prev = index_node;
         }
-
     }
 
     virtual void InsertToDataLayer(DataNode<Key, Value>* node,\
@@ -421,7 +421,7 @@ private:
 
     virtual bool keysEqual(const Key& key1,  const Key& key2) const
     {
-        return !(keyLess(key1, key2) && keyLess(key2, key1));
+        return !(keyLess(key1, key2) || keyLess(key2, key1));
     }
 
     virtual DataNode<Key, Value>* getBeforeEqual(const Key& key,
