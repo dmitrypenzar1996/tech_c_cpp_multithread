@@ -21,7 +21,7 @@ Socket Socket::create(int socket_fd, int epoll_listener)
     if (epoll_ctl(epoll_listener, EPOLL_CTL_ADD, socket_fd, &event)){
         throw SocketException(errno, socket_fd);
     }
-    return Socket(socket_fd, epoll_listener) 
+    return Socket(socket_fd, epoll_listener); 
 }
 
 Socket::Socket(int _socket_fd, int _epoll_listener)
