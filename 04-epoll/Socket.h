@@ -23,10 +23,10 @@ private:
     int socket_fd;
     int epoll_listener;
     queue<WriteTask> write_queue;
+    Socket(int _socket_fd, int _epoll_listener);
 
 public:
     Socket();
-    Socket(int _socket_fd, int _epoll_listener);
     Socket(const Socket& other) = delete;
     Socket& operator=(const Socket& other) = delete;
     Socket(Socket&& tmp);
@@ -36,5 +36,6 @@ public:
     void write();
     bool has_no_task();
     friend void swap(Socket& first, Socket& second);
+    static Socket create(int socket_fd, int epoll_listener);
 };
 #endif

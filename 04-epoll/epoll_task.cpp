@@ -73,7 +73,7 @@ int main(int argNum, char** args) {
                                 // continue;
                             }
                         }
-                        clients_sockets[new_connection] = Socket(new_connection, epoll_listener);
+                        clients_sockets[new_connection] = Socket::create(new_connection, epoll_listener);
                     }
                 } else if ((epoll_event_arr[i].events & EPOLLOUT) || (epoll_event_arr[i].events & EPOLLIN)) {
                     if (epoll_event_arr[i].events & EPOLLOUT) {

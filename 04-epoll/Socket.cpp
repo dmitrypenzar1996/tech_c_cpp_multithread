@@ -11,17 +11,22 @@ Socket::Socket()
     : epoll_listener(-1)
     , socket_fd(-1) {}
 
-Socket::Socket(int _socket_fd, int _epoll_listener)
-    : socket_fd(_socket_fd)
-    , epoll_listener(_epoll_listener) {
-    set_notblocking(socket_fd);
+
+Socket Socket::create(int socket_fd, int epoll_listener)
+{
     epoll_event event;
     event.data.fd = socket_fd;
+    set_notblocking(socket_fd);
     event.events = EPOLLIN;
-    if (epoll_ctl(epoll_listener, EPOLL_CTL_ADD, socket_fd, &event)) {
+    if (epoll_ctl(epoll_listener, EPOLL_CTL_ADD, socket_fd, &event)){
         throw SocketException(errno, socket_fd);
     }
+    return Socket(socket_fd, epoll_listener) 
 }
+
+Socket::Socket(int _socket_fd, int _epoll_listener)
+    : socket_fd(_socket_fd)
+    , epoll_listener(_epoll_listener) {}
 
 Socket& Socket::operator=(Socket&& tmp) {
     swap(*this, tmp);
