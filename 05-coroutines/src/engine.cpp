@@ -7,8 +7,8 @@ namespace Coroutine {
 void Engine::Store(context& ctx) {
     char stack_start; // get current stack position
 
-    ctx.Low = this->StackBottom;
-    ctx.Hight = this->StackBottom;
+    ctx.Low = StackBottom;
+    ctx.Hight = StackBottom;
 
     if (&stack_start > ctx.Low)
     {
@@ -21,7 +21,7 @@ void Engine::Store(context& ctx) {
     int allow_size = ctx.Hight - ctx.Low;
     if (std::get<1>(ctx.Stack) < allow_size)
     {
-        delete std::get<0>(ctx.Stack); // free buffer !
+        delete std::get<0>(ctx.Stack); // free buffer 
         std::get<0>(ctx.Stack) = new char[allow_size];
         std::get<1>(ctx.Stack) = allow_size;
     }
@@ -57,7 +57,7 @@ void Engine::sched(void* routine_) {
     }
     
     if (routine == nullptr && cur_routine == nullptr)
-    {// last run
+    {// last run ?
         routine = alive;
         if (alive == nullptr)
         {

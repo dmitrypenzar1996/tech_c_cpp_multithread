@@ -61,6 +61,8 @@ private:
      */
     context* alive;
 
+    context* idle_ctx;
+
 protected:
     /**
      * Save stack of the current coroutine in the given context
@@ -117,11 +119,19 @@ public:
 
         // Start routine execution
         void* pc = run(main, std::forward<Ta>(args)...);
-        std::cout << "Endl" << std::endl;
-        if (pc != nullptr) {
-            sched(pc);
-        }
+        idle_ctx = new context();
 
+        if (setjmp(idle_ctx->Environment) > 0)
+        {
+            return;
+        }
+        else
+        {
+            if (pc != nullptr) {
+                Store(*idle_ctx);
+                sched(pc);
+            }
+        }
         // Shutdown runtime
         this->StackBottom = 0;
     }
@@ -185,7 +195,7 @@ public:
             } else {
                 yield();
             }
-            return nullptr;
+            Restore(*idle_ctx);
         }
 
         // setjmp remembers position from which routine could starts execution, but to make it correctly
