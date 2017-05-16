@@ -1,0 +1,15 @@
+writer0x7fe0ec402c50
+reader0x7fe0ec402e40
+complete: 0x7fe0ec402a30, next: 0x7fe0ec402c50
+0x7fe0ec402e40
+Read size: 11
+first_value
+Read size: 6
+gotham
+Read size: 20
+a_very_good_variable
+Returning
+0x0
+0x7fe0ec402e40
+Read size: 100
+a_very_good_variableue
