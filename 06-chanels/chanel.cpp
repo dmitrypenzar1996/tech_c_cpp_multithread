@@ -47,7 +47,7 @@ string get_string()
 void __writer(Coroutine::Engine& engine, int& cd)
 {
     std::cout << "Writer" << std::endl;
-    while (true)
+    while(true)
     {
         if (rand() % 2)
         {

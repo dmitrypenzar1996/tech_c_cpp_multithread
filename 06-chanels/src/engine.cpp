@@ -139,4 +139,158 @@ void Engine::sched(void* routine_) {
     Restore(*routine);
 }
 
+Engine::Chanel::~Chanel()
+{
+    delete[] buffer;
+}
+
+ssize_t Engine::Chanel::write(const char* data, size_t size)
+{
+    if (size > capacity - cur_size)
+    {
+        return -1;
+    }
+
+    if (size <= capacity - end_offset)
+    {
+        memcpy(buffer + end_offset, data, size);
+        end_offset += size;
+        if (end_offset == capacity)
+        {
+            end_offset = 0;
+        }
+    }
+    else
+    {
+        size_t to_end_size = capacity - end_offset;
+        memcpy(buffer + end_offset, data, to_end_size);
+        size_t from_start_size = size - to_end_size;
+        memcpy(buffer, data, from_start_size);
+                end_offset = from_start_size;
+    }
+
+    cur_size += size;
+    return size;
+}
+
+ssize_t Engine::Chanel::read(char* data, size_t max_size)
+{
+    if (cur_size == 0)
+    {
+        return -1;
+    }
+    size_t read_num = std::min(max_size, cur_size);
+    if (read_num <= capacity - begin_offset)
+    {
+        memcpy(data, buffer + begin_offset, read_num);
+        begin_offset += read_num;
+        if (begin_offset == capacity)
+        {
+            begin_offset = 0;
+        }
+    }
+    else
+    {
+        size_t size_1 = capacity - begin_offset;
+        memcpy(buffer, data + begin_offset, size_1);
+        size_t size_2 = read_num - size_1;
+        memcpy(data + size_1, buffer, size_2);
+                begin_offset = size_2;
+    }
+    cur_size -= read_num;
+    return read_num;
+}
+
+
+int Engine::get_chanel(size_t buf_size)
+{
+    Chanel* chanel = new Chanel(buf_size);
+    int key = chanel_table->size();
+    (*chanel_table)[key] = chanel;
+    return key;
+}
+
+ssize_t Engine::chanel_write(int cd, const char* buffer, size_t size, bool block)
+{
+    Chanel* chanel = (*chanel_table)[cd];
+    while (true)
+    {
+        ssize_t write_num = chanel->write(buffer, size);
+        if (write_num < 0)
+        {
+            // no enough space in chanel
+            if (block) // if blocking access, then block coroutine until we could
+                // write to chanel
+            {
+                pair<Chanel*, Chanel_Mode>* p =\
+                    new pair<Chanel*, Chanel_Mode>(chanel, CHANEL_WRITE);
+                    (*block_table)[cur_routine] = p;
+                    sched(nullptr);
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        else
+        {
+                // and unblock corutines waiting for reading from it
+            vector<context*> unblock_routines;
+            for(pair<context*, pair<Chanel*, Chanel_Mode>*> p : (*block_table))
+            {
+                if (p.second->first == chanel && p.second->second == CHANEL_READ)
+                {
+                    unblock_routines.push_back(p.first);       
+                }
+            }
+            for (context* s : unblock_routines)
+            {
+                block_table->erase(s);
+            }
+            return size;
+        }
+    }
+}
+
+ssize_t Engine::chanel_read(int cd, char* buffer, size_t max_size, bool block)
+{
+    Chanel* chanel = (*chanel_table)[cd];
+    while (true)
+    {
+        ssize_t read_num = chanel->read(buffer, max_size);
+        if (read_num < 0)
+        {
+            if (block) // if blocking access, then block coroutine until we can
+                // read to chanel
+            {
+                pair<Chanel*, Chanel_Mode>* p =\
+                    new pair<Chanel*, Chanel_Mode>(chanel, CHANEL_READ);
+                (*block_table)[cur_routine] = p;
+                sched(nullptr);
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        else
+        {
+            // read from chanel and unblock coroutines waiting for write
+            vector<context*> unblock_routines; 
+            for (pair<context*, pair<Chanel*, Chanel_Mode>*> p : (*block_table))
+            {
+                if (p.second->first == chanel && p.second->second == CHANEL_WRITE)
+                {
+                    unblock_routines.push_back(p.first);
+                }
+            }
+            for(context* s : unblock_routines)
+            {
+                block_table->erase(s);
+            }
+            return read_num;
+        }
+    }
+}
+
 } // namespace Coroutine
