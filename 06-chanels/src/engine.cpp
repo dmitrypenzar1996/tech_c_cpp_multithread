@@ -181,8 +181,9 @@ ssize_t Engine::Chanel::read(char* data, size_t max_size) {
 }
 
 int Engine::get_chanel(size_t buf_size) {
+    static int chanel_id = 0;
     Chanel* chanel = new Chanel(buf_size);
-    int key = chanel_table->size();
+    int key = chanel_id++;
     (*chanel_table)[key] = chanel;
     return key;
 }
