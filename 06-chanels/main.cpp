@@ -46,29 +46,21 @@ string get_string()
 
 void __writer(Coroutine::Engine& engine, int& cd)
 {
-    while(true)
+    for (int i = 0; i < 10; ++i)
     {
-        if (rand() % 2)
-        {
-            string a = get_string();
-            engine.chanel_write(cd, a.c_str(), a.size());
-        }
-        engine.sched(nullptr);
+        string a = get_string();
+        engine.chanel_write(cd, a.c_str(), a.size());
     }
 }
 
 void __reader(Coroutine::Engine& engine, int& cd)
 {
-    while (true)
+    for (int i = 0; i < 10; ++ i)
     {
-        if (rand() % 2)
-        {
-            char b[100];
-            ssize_t read_num = engine.chanel_read(cd, b, 99);
-            b[read_num] = '\0';
-            std::cout << "Read size: " << read_num << endl << b; 
-        }
-        engine.sched(nullptr);
+        char b[100];
+        ssize_t read_num = engine.chanel_read(cd, b, 99);
+        b[read_num] = '\0';
+        std::cout << "Read size: " << read_num << endl << b; 
     }
 }
 
