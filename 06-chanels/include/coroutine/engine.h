@@ -5,9 +5,9 @@
 #include <iostream>
 #include <map>
 #include <setjmp.h>
+#include <string.h>
 #include <tuple>
 #include <vector>
-#include <string.h>
 
 using std::vector;
 using std::map;
@@ -52,15 +52,15 @@ private:
         struct context* next = nullptr;
     } context;
 
-    struct Chanel
-    {
+    struct Chanel {
         char* buffer = nullptr;
         size_t begin_offset = 0;
         size_t end_offset = 0;
         size_t cur_size = 0;
         size_t capacity = 0;
-        Chanel(size_t _capacity): capacity(_capacity), cur_size(0)
-        {
+        Chanel(size_t _capacity)
+            : capacity(_capacity)
+            , cur_size(0) {
             buffer = new char[capacity];
         }
         Chanel(const Chanel&) = delete;
@@ -70,18 +70,16 @@ private:
         ~Chanel();
         ssize_t write(const char* data, size_t size);
         ssize_t read(char* data, size_t max_size);
-
-        
     };
 
-    enum Chanel_Mode{CHANEL_READ, CHANEL_WRITE};
+    enum Chanel_Mode { CHANEL_READ,
+        CHANEL_WRITE };
 
     map<int, Chanel*>* chanel_table; // mapping of descriptors to chanel structures
     map<context*, pair<Chanel*, Chanel_Mode>*>* block_table; //for each context,
 
     //which chanel it's waiting for, and to write or to read
     //if no such chanel, when chanel* is nullptr
-
 
     /**
      * Where coroutines stack begins
@@ -101,7 +99,7 @@ private:
     /**
      * Context to be returned finally
      */
-     context* idle_ctx;
+    context* idle_ctx;
 
 protected:
     /**
@@ -126,8 +124,8 @@ public:
         , alive(nullptr) {}
     Engine(Engine&&) = delete;
     Engine(const Engine&) = delete;
-    Engine& operator=(const Engine&)=delete;
-    Engine& operator=(Engine&&)=delete;
+    Engine& operator=(const Engine&) = delete;
+    Engine& operator=(Engine&&) = delete;
 
     /**
      * Gives up current routine execution and let engine to schedule other one. It is not defined when
@@ -164,8 +162,7 @@ public:
         char StackStartsHere;
         this->StackBottom = &StackStartsHere;
         this->chanel_table = new map<int, Chanel*>;
-        this->block_table =\
-            new map<context*, pair<Chanel*, Chanel_Mode>*>(); 
+        this->block_table = new map<context*, pair<Chanel*, Chanel_Mode>*>();
         //for each context,
 
         // Start routine execution
@@ -175,8 +172,7 @@ public:
         if (setjmp(idle_ctx->Environment) > 0) {
             //Here: correct finish of the coroutine section
             return;
-        }
-        else {
+        } else {
             if (pc != nullptr) {
                 Store(*idle_ctx);
                 sched(pc);
@@ -188,10 +184,9 @@ public:
         this->StackBottom = 0;
     }
 
-
     int get_chanel(size_t buf_size);
-    ssize_t chanel_write(int cd, const char* buffer, size_t size, bool block=true);
-    ssize_t chanel_read(int cd, char* buffer, size_t max_size, bool block=true);
+    ssize_t chanel_write(int cd, const char* buffer, size_t size, bool block = true);
+    ssize_t chanel_read(int cd, char* buffer, size_t max_size, bool block = true);
 
     template <typename... Ta>
     void* run(void (*func)(Ta...), Ta&&... args) {
