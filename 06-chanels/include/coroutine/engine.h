@@ -118,14 +118,12 @@ protected:
     //void Enter(context& ctx);
 
 public:
-    Engine()
-        : StackBottom(0)
-        , cur_routine(nullptr)
-        , alive(nullptr) {}
+    Engine();
     Engine(Engine&&) = delete;
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
     Engine& operator=(Engine&&) = delete;
+    ~Engine();
 
     /**
      * Gives up current routine execution and let engine to schedule other one. It is not defined when
@@ -161,8 +159,6 @@ public:
         // To acquire stack begin, create variable on stack and remember its address
         char StackStartsHere;
         this->StackBottom = &StackStartsHere;
-        this->chanel_table = new map<int, Chanel*>;
-        this->block_table = new map<context*, pair<Chanel*, Chanel_Mode>*>();
         //for each context,
 
         // Start routine execution
@@ -187,6 +183,7 @@ public:
     int get_chanel(size_t buf_size);
     ssize_t chanel_write(int cd, const char* buffer, size_t size, bool block = true);
     ssize_t chanel_read(int cd, char* buffer, size_t max_size, bool block = true);
+    void delete_chanel(int chanel);
 
     template <typename... Ta>
     void* run(void (*func)(Ta...), Ta&&... args) {

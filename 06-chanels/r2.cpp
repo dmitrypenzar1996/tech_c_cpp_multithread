@@ -161,18 +161,44 @@ ssize_t Engine::Chanel::read(char* data, size_t max_size) {
     if (cur_size == 0) {
         return -1;
     }
- 
     size_t read_num = std::min(max_size, cur_size);
+    size_t size_1 = std::min(read_num, capacity - begin_offset);
+    for(int i = 0; i < size_1; ++i)
+    {
+        if (*(buffer + begin_offset + i) == '\n')
+        {
+            read_num = i + 1;
+            break;
+        }
+    }
+
     if (read_num <= capacity - begin_offset) {
+        char* mes_end = strchr(buffer, '\n');
+        for(int i = 0; i < read_num; ++i)
+        {
+            if (*(buffer + begin_offset + i) == '\n')
+            {
+                read_num = i + 1;
+                break;
+            }
+        }
+        
         memcpy(data, buffer + begin_offset, read_num);
         begin_offset += read_num;
         if (begin_offset == capacity) {
             begin_offset = 0;
         }
     } else {
-        size_t size_1 = capacity - begin_offset;
         memcpy(data, buffer + begin_offset, size_1);
         size_t size_2 = read_num - size_1;
+        for(int i = 0; i < size_2; ++i)
+        {
+            if (*(buffer + i) == '\n')
+            {
+                size_2 = i + 1;
+                break;
+            }
+        }
         memcpy(data + size_1, buffer, size_2);
         begin_offset = size_2;
     }

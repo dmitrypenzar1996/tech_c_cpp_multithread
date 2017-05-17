@@ -161,8 +161,8 @@ ssize_t Engine::Chanel::read(char* data, size_t max_size) {
     if (cur_size == 0) {
         return -1;
     }
- 
     size_t read_num = std::min(max_size, cur_size);
+
     if (read_num <= capacity - begin_offset) {
         memcpy(data, buffer + begin_offset, read_num);
         begin_offset += read_num;

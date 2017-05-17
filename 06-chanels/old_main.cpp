@@ -44,41 +44,41 @@ string get_string()
     return "Just for compiler\n";
 }
 
-void __png(Coroutine::Engine& engine, int& in_cd, int& out_cd, string& name)
+void __writer(Coroutine::Engine& engine, int& cd)
 {
-    while(true)
+    for (int i = 0; i < 10; ++i)
     {
-        char a[2];
-        engine.chanel_read(in_cd, a, 2);
-        std::cout << name << std::endl;
-        ++a[0];
-        engine.chanel_write(out_cd, a, 2);
+        string a = get_string();
+        engine.chanel_write(cd, a.c_str(), a.size());
     }
 }
 
-
-void __main(Coroutine::Engine& engine, int& c12, int& c23, int& c31)
+void __reader(Coroutine::Engine& engine, int& cd)
 {
-    string name1 = "ping";
-    string name2 = "pang";
-    string name3 = "pong";
-    void* ping = engine.run(__png, engine, c31, c12, name1);
-    void* pang = engine.run(__png, engine, c12, c23, name2);
-    void* pong = engine.run(__png, engine, c23, c31, name3);
-    engine.chanel_write(c31, "\1", 1);
-    engine.sched(ping);
+    for (int i = 0; i < 10; ++ i)
+    {
+        char b[100];
+        ssize_t read_num = engine.chanel_read(cd, b, 99);
+        b[read_num] = '\0';
+        std::cout << "Read size: " << read_num << endl << b; 
+    }
+}
+
+void __main(Coroutine::Engine& engine, int& cd)
+{
+    void* writer = engine.run(__writer, engine, cd);
+    void* reader = engine.run(__reader, engine, cd);
+    std::cout << "writer" << writer << std::endl;
+    std::cout << "reader" << reader << std::endl;
+    engine.sched(reader);
 }
 
 int main()
 {
     srand(time(NULL));
     Coroutine::Engine engine;
-    int c12 = engine.get_chanel(2); 
-    int c23 = engine.get_chanel(2); 
-    int c31 = engine.get_chanel(2); 
-    engine.start(__main, engine, c12, c23, c31);
-    engine.delete_chanel(c12);
-    engine.delete_chanel(c23);
-    engine.delete_chanel(c31);
+    int cd = engine.get_chanel(2048); 
+    engine.start(__main, engine, cd);
+    engine.delete_chanel(cd);
     return 0;
 }
